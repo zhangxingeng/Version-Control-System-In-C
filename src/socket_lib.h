@@ -11,7 +11,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-void send_str(char* msg, int fd);
+int send_str(char* msg, int fd);
 int recv_str(int fd, char* buff, int buff_size);
 int conn_estab(char type, char* name, int port);
 

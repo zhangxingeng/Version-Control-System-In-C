@@ -27,11 +27,13 @@ int conn_estab(char type, char* name, int port){
 }
 
 
-void send_str(char* msg, int fd){
+int send_str(char* msg, int fd){
 	int cnt = 0, len = strlen(msg);
 	while(cnt != len){
 		cnt += write(fd, msg+cnt, len-cnt);
+
 	}
+	return cnt;
 }
 /**
  * 	recv string from file descriptor
