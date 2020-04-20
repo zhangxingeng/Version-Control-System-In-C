@@ -49,7 +49,12 @@ char* send_files (char* projectPath, char* fullPath) {
 	sprintf(buffer, "%d", numFiles);
 	strcat(string, buffer);
 	strcat(string, ":");
+	sprintf(buffer, "%d", length);
+	strcat(string, buffer);
+	strcat(string, ":");
 	strcat(string, str);
+	free(buffer);
+	free(string);
 	//printf("str: %s\n", string);
 
 	return string;
