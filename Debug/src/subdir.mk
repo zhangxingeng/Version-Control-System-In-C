@@ -5,19 +5,19 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/client.c \
-../src/send_files.c \
+../src/sendfile.c \
 ../src/server.c \
 ../src/socket_lib.c 
 
 OBJS += \
 ./src/client.o \
-./src/send_files.o \
+./src/sendfile.o \
 ./src/server.o \
 ./src/socket_lib.o 
 
 C_DEPS += \
 ./src/client.d \
-./src/send_files.d \
+./src/sendfile.d \
 ./src/server.d \
 ./src/socket_lib.d 
 

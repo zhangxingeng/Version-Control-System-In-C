@@ -11,29 +11,18 @@
 
 
 // Function designed for chat between client and server.
-void* func(void* sockfd_ptr)
-{
+void* request_handler(void* sockfd_ptr){
 	int sock_fd = *((int*)sockfd_ptr);
-	char buff[1024];
-	int n;
-	// infinite loop for chat
-	for (;;) {
-		bzero(buff, sizeof(buff));
-		char* got = recv_str(sock_fd);
-		printf("From client: %s\t To client : ", got);
-		bzero(buff, sizeof(buff));
-		n = 0;
-		// copy server message in the buffer
-		while ((buff[n++] = getchar()) != '\n'){}
-		buff[n+1] = '\0';
-		send_str(buff, sock_fd);
+	int buff_size = 1024;
+	char buff[buff_size];
+	read_token(sock_fd, buff, buff_size, ' ');
+	char* command = buff_to_str(buff, buff_size);
+	read_token(sock_fd, buff, buff_size, ' ');
+	char* proj_name = buff_to_str(buff, buff_size);
 
-		// if msg contains "Exit" then server exit and chat ended.
-		if (strncmp("exit", buff, 4) == 0) {
-			printf("Server Exit...\n");
-			break;
-		}
-	}
+
+	free(command);
+	free(proj_name);
 	return NULL;
 }
 
@@ -58,7 +47,7 @@ int main()
 		  pthread_t cli_thread;
 		  pthread_mutex_t cli_mutex;
 		  pthread_mutex_init(&cli_mutex, NULL);
-		  if(pthread_create(&cli_thread, NULL,func, &cli_sock) != 0){printf("Error.\n");}
+		  if(pthread_create(&cli_thread, NULL,request_handler, &cli_sock) != 0){printf("Error.\n");}
 	}
 
 	close(sock_fd);

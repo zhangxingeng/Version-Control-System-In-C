@@ -6,7 +6,7 @@
 
 #include "socket_lib.h"
 
-void func(int sock_fd)
+void request_handler(int sock_fd)
 {
 	char buff[1024];
 	int n;
@@ -35,7 +35,7 @@ int main()
 	int sock_fd = conn_estab('c', "localhost", 10025);
 
 	// function for chat
-	func(sock_fd);
+	request_handler(sock_fd);
 
 
 	close(sock_fd);
