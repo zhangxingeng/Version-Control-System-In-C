@@ -5,11 +5,14 @@
 
 #include "libs/files_io.h"
 #include "libs/msc.h"
+#include "libs/ll.h"
 
 
-int cmd_to_svc(int cli_sock, char* cmd, char* proj);
 int create_project_srv(char* proj, int cli_sock);
-
+int commit_srv(char* proj, int cli_sock);
+int push_srv(char* proj, int cli_sock);
+int update_srv(char* proj, int cli_sock);
+int upgrade_srv(char* proj, int cli_sock);
 
 
 

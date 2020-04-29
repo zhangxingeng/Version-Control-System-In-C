@@ -3,11 +3,14 @@
 
 int read_token(int sock, char* buff, int buff_size, char delim){
 	memset(buff, '\0', buff_size*sizeof(char));
-	int total = 0, cnt = 0;
+	int total = 0, cnt = 0, retry = 0;
 	while(total < buff_size){
 		cnt = read(sock, buff+total, 1);
 		total += cnt;
-		if(buff[total-1] == delim){
+		if(total < 1){
+			if(retry >= RETRY){return 0;}
+			retry++;
+		}else if(buff[total-1] == delim){
 			buff[total-1] = '\0';
 			break;
 		}else if(cnt == 0){
@@ -15,27 +18,47 @@ int read_token(int sock, char* buff, int buff_size, char delim){
 			break;
 		}
 	}
-	return 0;
+	return total;
+}
+
+int write_str(int sock, char* str, int str_len){
+	int total = 0, cnt = 0, retry = 0;
+	while(total < str_len){
+		cnt = write(sock, str+total, str_len-total);
+		if(cnt == 0){
+			if(retry >= RETRY){printf("write err.\n"); return 0;}
+			retry++;
+		}
+		total += cnt;
+	}
+	return total;
 }
 
 
+int read_str(int sock, char* buff, int buff_size, int read_len){
+	int total = 0, cnt = 0, retry = 0;
+	while(total < read_len){
+		cnt = read(sock, buff+total, read_len);
+		if(cnt == 0){
+			if(retry >= RETRY){printf("write err.\n"); return 0;}
+			retry++;
+		}
+		total += cnt;
+	}
+	return total;
+}
 /**
  *
  * read a command into a buffer
+ * cmd format: <len_cmd> <cmd>
+ *
  */
-char* read_cmd(int fd, char* buff, int buff_size){
-	//read the len of the command
+int read_cmd(int fd, char* buff, int buff_size){
 	memset(buff, '\0', buff_size*sizeof(char));
 	read_token(fd, buff, buff_size, ' ');
-
-	//read the actual command
-	int cmd_len = atoi(buff); int total = 0, cnt = 0;
-	memset(buff, '\0', buff_size*sizeof(char));
-	while(total < cmd_len){
-		cnt = read(fd, buff+total, cmd_len);
-		total += cnt;
-	}
-	return buff;
+	int cmd_len = atoi(buff);
+	if(read_str(fd, buff, buff_size, cmd_len)!=0){return -1;}
+	return 0;
 }
 
 
@@ -44,11 +67,10 @@ char* read_cmd(int fd, char* buff, int buff_size){
  */
 int write_cmd(int fd, char* cmd){
 	int stream_len = strlen(cmd)+int_len(strlen(cmd))+1;
-	char* stream = (char*)malloc((stream_len+1)*sizeof(char));
-	memset(stream, '\0', stream_len*sizeof(char));
+	char* stream = calloc((stream_len+1), sizeof(char));
 	sprintf(stream, "%d", (int)strlen(cmd));
 	strcat(stream, " ");strcat(stream, cmd);
-	write(fd, stream, stream_len);
+	write_str(fd, stream, stream_len);
 	free(stream);
 	return 0;
 }
@@ -58,13 +80,8 @@ int write_cmd(int fd, char* cmd){
  *	parse a file from a block of data
  */
 char* parse_file_from_readin(int sock, int len){
-	char* buff = (char*)malloc((len+1)*sizeof(char));
-	memset(buff, '\0', (len+1)*sizeof(char));
-	int cnt = 0, total = 0;
-	while(total != len){
-		cnt = read(sock,(buff+total), (len-total) * sizeof(char));
-		total += cnt;
-	}
+	char* buff = calloc((len+1), sizeof(char));
+	if(read_str(sock, buff, len+1, len)!=0){printf("Read in failed.\n");}
 	return buff;
 }
 
@@ -75,9 +92,8 @@ char* parse_file_from_readin(int sock, int len){
 char* read_file_to_mem(char* path){
 	int filelen = file_len(path);
 	int fd = open(path, O_RDONLY);
-	char* mem = (char*)malloc((filelen+1)*sizeof(char));
-	memset(mem, '\0', (filelen+1)*sizeof(char));
-	read(fd, mem, filelen);
+	char* mem = calloc((filelen+1), sizeof(char));
+	read_str(fd, mem, filelen+1, filelen);
 	close(fd);
 	return mem;
 }
@@ -89,7 +105,7 @@ char* read_file_to_mem(char* path){
  */
 char* buff_to_str(char* buff, int buff_size){
 	int str_len = strlen(buff);
-	char* str = (char*)malloc((str_len+1)*sizeof(char));
+	char* str = calloc((str_len+1), sizeof(char));
 	strcpy(str, buff);
 	return str;
 }
@@ -114,14 +130,58 @@ int file_len(const char *file_name){
 }
 
 
-
-int dump_to_sock(char* msg, int fd){
-	int cnt = 0, len = strlen(msg);
-	while(cnt != len){
-		cnt += write(fd, msg+cnt, len-cnt);
-	}
-	return cnt;
+/**
+ * convert an unsigned char array to a hexadecimal string
+ * need to free
+ */
+char* u_char_to_str(unsigned char* arr, int arr_len){
+	char* result = calloc((arr_len*2+1), sizeof(char));
+	int x = 0;
+	for(; x < arr_len; x++)
+	    sprintf(result+(x*2), "%02x", arr[x]);
+	result[arr_len*2] = '\0';
+	return result;
 }
+
+
+/**
+ *  generate md5 for a file
+ *  need to free
+ */
+char* gen_md5(char* file_name){
+	int fd = open(file_name, O_RDONLY);
+	if (fd <= 0) {printf ("struct File open err.\n");return NULL;}
+
+	unsigned char raw_md5[MD5_DIGEST_LENGTH];//16
+	MD5_CTX mdContext;
+	int read_num;
+	unsigned char buff[1024];
+
+	MD5_Init (&mdContext);
+	while ((read_num = read(fd, buff, 1024)) > 0){
+		MD5_Update (&mdContext, buff, read_num);
+	}
+	MD5_Final (raw_md5,&mdContext);
+	char* result = u_char_to_str(raw_md5, MD5_DIGEST_LENGTH);
+
+	close (fd);
+	return result;
+}
+
+int cmd_relay(char* proj, char* cmd, int sock){
+	char msg[1024];
+	strcpy(msg, cmd);strcat(msg, " ");
+	strcat(msg, proj);
+	return write_cmd(sock, msg);
+}
+
+
+
+
+
+
+
+
 
 
 

@@ -11,15 +11,43 @@
 #include "libs/msc.h"
 #include "srvsvc.h"
 
+/**
+ * 	convert command from user to function on server
+ *
+ */
+int cmd_to_svc(int cli_sock, char* cmd, char* proj){
+	int result = 0;
+
+	if(strcmp(cmd, "create") == 0){
+		if(project_stepin(proj, '?') != -1){return -1;}
+		result = create_project_srv(proj, cli_sock);
+	}else {
+		if(project_stepin(proj, '?') != 0){return -1;}
+		else if(strcmp(cmd, "update") == 0){
+			result = update_srv(proj, cli_sock);
+		}else if(strcmp(cmd, "upgrade") == 0){
+			result = upgrade_srv(proj, cli_sock);
+		}else if(strcmp(cmd, "commit") == 0){
+			result = commit_srv(proj, cli_sock);
+		}else if(strcmp(cmd, "push") == 0){
+			result = push_srv(proj, cli_sock);
+		}else{
+			result = -1;
+		}
+	}
+	return result;
+}
+
 
 // Function designed for chat between client and server.
 void* request_handler(void* sockfd_ptr){
 	int sock_fd = *((int*)sockfd_ptr);
 	int buff_size = 1024;
 	char buff[buff_size];
-	read_cmd(sock_fd, buff, buff_size);
+	if(read_cmd(sock_fd, buff, buff_size) != 0){return NULL;}
 	char* cmd = strtok(buff, " ");
 	char* proj_name = strtok(NULL, "\0");
+	if(strlen(cmd) <=0 || strlen(proj_name) <= 0){return NULL;}
 	cmd_to_svc(sock_fd, cmd, proj_name);
 	return NULL;
 }
