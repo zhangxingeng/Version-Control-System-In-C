@@ -175,7 +175,17 @@ int cmd_relay(char* proj, char* cmd, int sock){
 	return write_cmd(sock, msg);
 }
 
-
+/*
+ * check if a string is a number
+ *
+ */
+int str_is_number(char* str){
+	int i = 0;
+	while(str[i] != '\0'){
+		if(str[i] < '0' || str[i] > '9'){return 0;}
+	}
+	return 1;
+}
 
 
 

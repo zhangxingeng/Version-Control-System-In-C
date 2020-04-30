@@ -45,7 +45,7 @@ int delete_file_node(struct Project* proj, struct Node* node);
 void free_file(union Data file);
 void free_proj(struct Project* proj);;
 
-struct Project* manifest_read(char* name);
+struct Project* indexer_read(char* name);
 int manifest_write(struct Project* proj);
 
 char* add_dot_slash(char* name);//need to free

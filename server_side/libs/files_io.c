@@ -96,6 +96,8 @@ int delete_file_node(struct Project* proj, struct Node* node){
 
 /**
  * recv files from a socket
+ *
+ * TODO: handle repetitive files
  */
 struct Project* recv_files(int sock){
 	struct Project* proj = calloc(1, sizeof(struct Project));
@@ -166,22 +168,31 @@ void free_proj(struct Project* proj){
 /**
  * 	convert manifest to project
  * 	project must be in current dir
+ *
+ * 	need test
  */
-struct Project* manifest_read(char* name){
+struct Project* indexer_read(char* name){
 	if(dir_exist(name) == -1){return NULL;}
 	struct Project* proj = calloc(1, sizeof(struct Project));
 	int fd = open(name, O_RDONLY);
 
 	int buff_size = 1000;
 	char buff[buff_size];
-	read_token(fd, buff, buff_size, '\n');proj->proj_version = atoi(buff);
+	read_token(fd, buff, buff_size, '\n');
+	if(str_is_number(buff)){proj->proj_version = atoi(buff);}//either version or update/commit/conflict
+	else{proj->proj_version = -1;}//version -1 means update or commit
 	struct Node* prev = NULL, *curr_node = NULL;
 	struct File* curr_file = NULL;
 	while(1){
-		if(read_token(fd, buff, buff_size, ' ') <= 0){break;}
+		if(read_token(fd, buff, buff_size, ' ') <= 0){free_proj(proj);return NULL;}//either madc or version
 		curr_node = calloc(1, sizeof(struct Node));
 		curr_file = calloc(1,sizeof(struct File));
 		curr_node->data.ptr = curr_file;//link file to node
+
+		if(proj->proj_version == -1){			//for madc
+			curr_file->act = buff[0];
+			read_token(fd, buff, buff_size, ' ');//file version
+		}
 		curr_file->ver = atoi(buff);
 		read_token(fd, buff, buff_size, ' ');curr_file->name = buff_to_str(buff, buff_size);
 		read_token(fd, buff, buff_size, '\n');curr_file->hash = buff_to_str(buff, buff_size);
@@ -218,9 +229,6 @@ int manifest_write(struct Project* proj){
 }
 
 
-/**
- *  convert project to manifest
- */
 
 
 

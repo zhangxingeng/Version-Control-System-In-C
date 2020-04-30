@@ -59,8 +59,9 @@ int update_srv(char* proj, int cli_sock){
  *
  */
 int upgrade_srv(char* proj, int cli_sock){
-	//recv Update
-	//send out files on update list
+	if(recv_files(cli_sock) != NULL){printf("recv update.\n");}
+	struct Project* upgrade_files = indexer_read("./.update");
+	send_files(upgrade_files, cli_sock);
 	return 0;
 }
 

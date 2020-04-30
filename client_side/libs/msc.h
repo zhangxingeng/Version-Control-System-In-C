@@ -28,5 +28,7 @@ int file_len(const char *file_name);
 char* gen_md5(char* file_name); //need to free
 int cmd_relay(char* proj, char* cmd, int sock);
 
+int str_is_number(char* str);
+
 #endif
 
