@@ -12,12 +12,13 @@
 /**
  *  convert user command into function
  */
-int cmd_to_svc(int cli_sock, char* cmd, char* proj, char* arg1){
+int cmd_to_svc(int srv_sock, char* cmd, char* proj, char* arg1){
 	int result = 0;
 
 	if(strcmp(cmd, "create") == 0){
 		if(project_stepin(proj, '?') != -1){return -1;}
-		result = create_project_cli(proj, cli_sock);
+		if(cmd_relay(proj, "create", srv_sock)!=0){return -1;}
+		result = create_project_cli(proj, srv_sock);
 	}else{
 		if(project_stepin(proj, '?') != 0){return -1;}
 		if(strcmp(cmd, "add") == 0){
@@ -25,13 +26,13 @@ int cmd_to_svc(int cli_sock, char* cmd, char* proj, char* arg1){
 		}else if (strcmp(cmd, "delete") == 0){
 			result = delete_a_file_cli(proj, arg1);
 		}else if(strcmp(cmd, "update") == 0){
-			result = update_cli(proj, cli_sock);
+			result = update_cli(proj, srv_sock);
 		}else if(strcmp(cmd, "upgrade") == 0){
-			result = upgrade_cli(proj, cli_sock);
+			result = upgrade_cli(proj, srv_sock);
 		}else if(strcmp(cmd, "commit") == 0){
-			result = commit_cli(proj, cli_sock);
+			result = commit_cli(proj, srv_sock);
 		}else if(strcmp(cmd, "push") == 0){
-			result = push_cli(proj, cli_sock);
+			result = push_cli(proj, srv_sock);
 		}else{
 			result = -1;
 		}
