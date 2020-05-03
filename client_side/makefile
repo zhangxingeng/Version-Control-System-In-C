@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Werror -fsanitize=address -std=c99
+CFLAGS=#-Wall -Werror -fsanitize=address -std=c99
 I=-I /usr/local/Cellar/openssl@1.1/1.1.1g/include
 L=-L /usr/local/Cellar/openssl@1.1/1.1.1g/lib
 

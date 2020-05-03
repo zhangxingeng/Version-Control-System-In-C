@@ -24,7 +24,7 @@ struct Node {
 
 
 struct Node* prepend(struct Node* head, union Data data);
-struct Node* append(struct Node* head, union Data data);
+struct Node* append_at_tail(struct Node* tail, struct Node* head, struct Node* nxt);
 void free_node(struct Node* ptr, void (*free_data)());
 
 struct Node* node_extract(struct Node* node, struct Node* head);

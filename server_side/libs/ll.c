@@ -30,18 +30,13 @@ void free_node(struct Node* ptr, void (*free_data)()){
  * append new node
  * return the new head
  */
-struct Node* append(struct Node* head, union Data data){
-  struct Node* new_node;
-  new_node = (struct Node*)calloc(1, sizeof(struct Node));
-  new_node->data = data;
-
-  if(head == NULL){return new_node;}
-
-  struct Node* last = head;
-  while(last->next != NULL){last = last->next;}
-  last->next = new_node;
-  new_node->prev = last;
-  return head;
+struct Node* append_at_tail(struct Node* tail, struct Node* head, struct Node* nxt){
+	if(tail == NULL){return nxt;}
+	else{
+		tail->next = nxt;
+		nxt->prev = tail;
+		return head;
+	}
 }
 
 /**
@@ -50,15 +45,21 @@ struct Node* append(struct Node* head, union Data data){
  */
 struct Node* node_extract(struct Node* node, struct Node* head){
 	struct Node* res = head;
-	if(head == node){res = node->next;}
+	if(head == node){
+		if(node->next == NULL){res = NULL;}
+		res = node->next;
+	}
 	struct Node* nxt = node->next;node->next = NULL;
 	struct Node* prv = node->prev; node->prev = NULL;
-	nxt->prev = prv; prv->next = nxt;
+	if(nxt != NULL){nxt->prev = prv;}
+	if(prv != NULL){prv->next = nxt;}
 	return res;
 }
 
 struct Node* add_before(struct Node* node, struct Node* before, struct Node* head){
-	struct Node* res = head, *prev = node->prev;
+	if(node == NULL){return before;}
+	struct Node* res = head, *prev = NULL;
+	if(node->prev != NULL){prev = node->prev;}
 	if(prev != NULL){
 		prev->next = before; before->prev = prev;
 		node->prev = before; before->next = node;

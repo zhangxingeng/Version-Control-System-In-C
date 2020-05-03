@@ -19,7 +19,7 @@ int create_project_srv(char* proj, int cli_sock){
 int commit_srv(char* proj, int cli_sock){
 	if(send_one_file(cli_sock, "./.manifest")<=0){return -1;}
 	if(recv_one_file(cli_sock) != NULL){printf("recv commit.\n");}
-	return change_mani_with_file_recv(cli_sock, "./.manifest", "./.commit");
+	return 0;
 }
 
 /**
@@ -32,7 +32,6 @@ int push_srv(char* proj, int cli_sock){
 	char* commit_fn = calloc(fn_len, sizeof(char));
 	strcpy(commit_fn, "./.commit_"); strcat(commit_fn, buff);
 	//delete all other commits
-	send_one_file(cli_sock, commit_fn);	//send out the manifest
 	return change_mani_with_file_recv(cli_sock, "./.manifest", commit_fn);
 }
 

@@ -49,6 +49,7 @@ void* request_handler(void* sockfd_ptr){
 	char* proj_name = strtok(NULL, "\0");
 	if(strlen(cmd) <=0 || strlen(proj_name) <= 0){printf("Dont have vaild cmd\n");return NULL;}
 	cmd_to_svc(sock_fd, cmd, proj_name);
+	close(sock_fd);
 	return NULL;
 }
 
@@ -85,4 +86,24 @@ int main(){
 
 	close(sock_fd);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

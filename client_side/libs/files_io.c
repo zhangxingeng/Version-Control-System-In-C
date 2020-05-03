@@ -142,23 +142,25 @@ struct Project* recv_files(int sock){
 	while(curr != NULL){		//unpack files
 		curr_file = (struct File*)(curr->data.ptr);
 		file_buff = parse_file_from_readin(sock, curr_file->len);
+		if(strcmp(curr_file->name, "./.commit") == 0){
+			int name_len = strlen(curr_file->name) + strlen(curr_file->hash) + 1;
+			char* new_name = calloc(name_len+1, sizeof(char));
+			strcpy(new_name, curr_file->name);strcat(new_name, "_");
+			strcat(new_name, curr_file->hash);
+			free(curr_file->name);
+			curr_file->name = new_name;
+		}
 		if(dir_exist(curr_file->name)==0){		//when file already exists
 			if(strcmp(curr_file->name, "./.manifest") == 0){
 				char* new_name = "./.manifest_remote";
 				free(curr_file->name);
 				curr_file->name = calloc(strlen(new_name)+1, sizeof(char));
 				strcpy(curr_file->name, new_name);
-			}else if(strcmp(curr_file->name, "./.commit") == 0){
-				int name_len = strlen(curr_file->name) + strlen(curr_file->hash) + 1;
-				char* new_name = calloc(name_len+1, sizeof(char));
-				strcpy(new_name, curr_file->name);strcat(new_name, "_");
-				strcat(new_name, curr_file->hash);
-				free(curr_file->name);
-				curr_file->name = new_name;
 			}else{
 				remove(curr_file->name);
 			}
 		}
+
 		int fd = open(curr_file->name, O_WRONLY|O_CREAT, 0666);
 		write_str(fd, file_buff, curr_file->len);
 		free(file_buff);
@@ -275,7 +277,6 @@ int manifest_write(struct Project* proj){
 		write_str(fd, f_ptr->hash, strlen(f_ptr->hash)); write_str(fd,"\n",strlen("\n"));
 		n_ptr = n_ptr->next;
 	}
-	free_proj(proj);
 	close(fd);
 	return 0;
 }
@@ -402,38 +403,50 @@ int record_change_repo(int srv_sock, char* proj, char* cmd){
 	if(file_len("./.conflict")<=9){remove("./.conflict");printf("ready to upgrade.\n");}
 	else{printf("Please resolve the conflict first.\n");return -1;}//TODO: print out conflict info
 	if(file_len(mad_file)<=7){remove(mad_file);printf("Your proj is up to date.\n");}
+	remove("./.manifest_remote");
 	return 0;
 }
 
 int manifest_update(struct Project* mods, struct Project* mani){
 	mods->files = merge_sort(mods->files, comp_file_name);
 	mani->files = merge_sort(mani->files, comp_file_name);
-	struct Node* node_mod = mods->files, *node_mani = mani->files;
-	while(node_mani != NULL){
-		while(node_mod != NULL){
-			struct File* f_mod = (struct File*)(node_mod->data.ptr);
+	struct Node* node_mod = mods->files, *node_mani = mani->files, *mani_last = mani->files;
+	struct File* f_mod = NULL, * f_mani = NULL;
+	int cmp = 0;
+	while(1){
 
-			int cmp = comp_file_name(node_mani->data, node_mod->data);
-			if(cmp < 0){node_mani = node_mani->next;}//no change to curr local file
-			else if(cmp > 0){
-				if(f_mod->act == 'A'){
-					struct Node* new_node_mod = node_mod->next;
-					mods->files = node_extract(node_mod, mods->files);//take nodetoadd from mod and insert to mani
-					mods->files = add_before(node_mod, node_mani, mods->files);
-					node_mod = new_node_mod;
-			 	}
+		if(node_mod == NULL){break;}//change list is empty, get out
+		else if(node_mani == NULL){cmp = 1;f_mod = (struct File*)(node_mod->data.ptr);}
+		else{
+			f_mod = (struct File*)(node_mod->data.ptr);
+			f_mani = (struct File*)(node_mani->data.ptr);
+			cmp = comp_file_name(node_mani->data, node_mod->data);
+			while(mani_last->next != NULL){mani_last = mani_last->next;}
+		}
+		if(cmp < 0){node_mani = node_mani->next;}//no change to curr local file
+		else if(cmp > 0){
+			if(f_mod->act == 'A'){//append node to tail
+				struct Node* new_node_mod = node_mod->next;
+				mods->files = node_extract(node_mod, mods->files);
+				if(node_mani != NULL){mani->files = add_before(node_mani, node_mod, mani->files);}
+				else{mani->files = append_at_tail(mani_last, mani->files, node_mod);mani_last = node_mod;}
+				f_mod->ver++;mods->cnt--; mani->cnt++;
+				node_mod = new_node_mod;
+			}
+		}else{
+			if(f_mod->act == 'D'){//remove node
+				struct Node* temp = node_mani->next;
+				mani->files = node_extract(node_mani, mani->files);
+				char* fn = ((struct File*)(node_mani->data.ptr))->name;remove(fn);
+				free_node(node_mani,free_file);
+				mods->cnt--; mani->cnt--;
+				node_mod = node_mod->next; node_mani = temp;
 			}else{
-				if(f_mod->act == 'D'){
-					struct Node* temp = node_extract(node_mani, mani->files);
-					if(temp != NULL){mani->files = temp;}
-					char* fn = ((struct File*)(node_mani->data.ptr))->name;
-					remove(fn);
-					free(node_mani);
-			 	}else{//M
-			 		void* temp = node_mani->data.ptr;
-			 		node_mani->data.ptr = node_mod->data.ptr;
-			 		node_mod->data.ptr = temp;
-				}
+				void* temp = node_mani->data.ptr;
+				node_mani->data.ptr = node_mod->data.ptr;
+				node_mod->data.ptr = temp;
+				f_mod->ver++;
+				node_mod = node_mod->next; node_mani = node_mani->next;
 			}
 		}
 	}
@@ -448,13 +461,14 @@ int manifest_update(struct Project* mods, struct Project* mani){
 
 int change_mani_with_file_recv(int srv_sock, char* mani, char* file){
 	if(send_one_file(srv_sock, file)==0){printf("%s sent.\n",file);}//send req
-	int ver = recv_proj(srv_sock);//recv file
+	recv_proj(srv_sock);//recv file
 
 	struct Project* mods = indexer_read(file);
 	struct Project* old_manifest = indexer_read(mani);
 	manifest_update(mods, old_manifest);//update manifest
-	old_manifest->proj_version = ver;
+	old_manifest->proj_version = (old_manifest->proj_version++);
 	free_proj(mods);
+	remove(file);remove(mani);
 	manifest_write(old_manifest);
 	free_proj(old_manifest);
 	return 0;
@@ -469,7 +483,7 @@ int change_mani_with_file_send(int sock){
 	char* name = recv_one_file(sock);//recv a change file
 	if(name == NULL){printf("failed to recv file %s.\n", name);}
 	struct Project* upgrade_files = indexer_read(name);
-	free(name);
+	remove(name);free(name);remove("./.commit");
 	send_files(upgrade_files, sock);
 	return 0;
 }

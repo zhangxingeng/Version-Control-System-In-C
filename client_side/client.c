@@ -44,8 +44,8 @@ int cmd_to_svc(int srv_sock, char* cmd, char* proj, char* arg1){
 
 int main(int argc, char** argv){
 	int sock_fd = conn_estab('C', "localhost", 12196);
-	printf("%d", cmd_to_svc(sock_fd, "commit", "kuma", NULL));
-	//printf("%d", cmd_to_svc(sock_fd, argv[1], argv[2], NULL));
+	//printf("%d", cmd_to_svc(sock_fd, "push", "kuma", NULL));
+	printf("%d", cmd_to_svc(sock_fd, argv[1], argv[2], NULL));
 	close(sock_fd);
 	return 0;
 }

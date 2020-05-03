@@ -80,7 +80,7 @@ int write_cmd(int fd, char* cmd){
  */
 char* parse_file_from_readin(int sock, int len){
 	char* buff = calloc((len+1), sizeof(char));
-	if(read_str(sock, buff, len+1, len)!=0){printf("Read in failed.\n");}
+	if(read_str(sock, buff, len+1, len)<=0){}
 	return buff;
 }
 

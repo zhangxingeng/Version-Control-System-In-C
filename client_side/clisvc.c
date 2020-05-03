@@ -67,12 +67,11 @@ int commit_cli(char* proj, int srv_sock){
 
 int push_cli(char* proj, int srv_sock){
 	if(dir_exist("./.commit") != 0){printf("please commit before push.\n"); return -1;}
-	if(dir_exist("./.conflict") != 0){printf("please resolve conflict first.\n"); return -1;}
+	if(dir_exist("./.conflict") == 0){printf("please resolve conflict first.\n"); return -1;}
 	if(cmd_relay(proj, "push", srv_sock)!=0){return -1;}
 	char buff[100];
-	strcpy(buff, "hash ");
 	char* md5 = gen_md5("./.commit");
-	strcat(buff, md5);
+	strcpy(buff, md5);
 	write_cmd(srv_sock, buff);//send out md5 of commit
 	change_mani_with_file_send(srv_sock);//recv commit from srver and send out its required file
 	return 0;
