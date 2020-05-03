@@ -43,43 +43,10 @@ int cmd_to_svc(int srv_sock, char* cmd, char* proj, char* arg1){
 
 
 int main(int argc, char** argv){
-	int sock_fd = conn_estab('c', "localhost", 10035);
-	printf("%d", cmd_to_svc(sock_fd, "create", "kuma", NULL));
+	int sock_fd = conn_estab('C', "localhost", 12196);
+	printf("%d", cmd_to_svc(sock_fd, "commit", "kuma", NULL));
 	//printf("%d", cmd_to_svc(sock_fd, argv[1], argv[2], NULL));
 	close(sock_fd);
+	return 0;
 }
 
-
-/*/
-int main(){
-
-	//this part is for testing sendfile
-
-
-	struct File file1 = {"./1", file_len("./1"), 0, NULL};
-	struct File file2 = {"./2", file_len("./2"), 0, NULL};
-	struct File file3 = {"./3", file_len("./3"), 0, NULL};
-
-	struct Node nd3;nd3.data.ptr = (void*)&file3;nd3.next = NULL;
-	struct Node nd2;nd2.data.ptr = (void*)&file2;nd2.next = &nd3;
-	struct Node nd1;nd1.data.ptr = (void*)&file1;nd1.next = &nd2;
-
-	struct Project proj = {"test", 0, 3, &nd1};
-
-
-	remove("./final");
-	int fd = open("./final", O_RDWR|O_CREAT, 0666);
-	printf("Sent out bytes: %d", send_files(&proj, fd));
-	close(fd);
-
-
-	int fd = open("./final", O_RDONLY);
-	struct Project* proj2;
-	proj2 = recv_files(fd);
-	free(proj2);
-	close(fd);
-
-
-
-}
-*/

@@ -15,11 +15,11 @@ int conn_estab(char type, char* name, int port){
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(10027);//host to network short
 	bcopy(results->h_addr, &(serv_addr.sin_addr.s_addr), results->h_length);
-	if(type == 'c'){
+	if(type == 'C'){
 		if(connect(sock_fd,(struct sockaddr*)&serv_addr,sizeof(serv_addr)) != 0){
 			printf("Error 2.\n");exit(0);}else{printf("connected.\n");}
 		return sock_fd;
-	}else if(type == 'b'){
+	}else if(type == 'B'){
 		if ((bind(sock_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) != 0)
 		{printf("Error 3.\n");exit(0);}else{printf("binded.\n");}
 		return sock_fd;

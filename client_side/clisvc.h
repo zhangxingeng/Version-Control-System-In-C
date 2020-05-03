@@ -1,6 +1,7 @@
 #ifndef CLISVC_H
 #define CLISVC_H
 
+
 #include "libs/msc.h"
 #include "libs/files_io.h"
 
@@ -14,6 +15,8 @@ int push_cli(char* proj, int srv_sock);
 int update_cli(char* proj, int srv_sock);
 int upgrade_cli(char* proj, int srv_sock);
 
-int find_diff(struct Project* local, struct Project* remote,
-		int update_file, int conflict_file);
+
+char file_change_detect(struct Node* loco, struct Node* remo);
+
+
 #endif

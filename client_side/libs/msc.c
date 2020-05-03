@@ -57,7 +57,7 @@ int read_cmd(int fd, char* buff, int buff_size){
 	memset(buff, '\0', buff_size*sizeof(char));
 	read_token(fd, buff, buff_size, ' ');
 	int cmd_len = atoi(buff);
-	if(read_str(fd, buff, buff_size, cmd_len)!=0){return -1;}
+	if(read_str(fd, buff, buff_size, cmd_len)<=0){return -1;}
 	return 0;
 }
 
@@ -74,7 +74,6 @@ int write_cmd(int fd, char* cmd){
 	free(stream);
 	return 0;
 }
-
 
 /**
  *	parse a file from a block of data
@@ -126,7 +125,7 @@ int file_len(const char *file_name){
     if(stat(file_name,&st)==0)
         return (st.st_size);
     else
-        return -1;
+        return 0;
 }
 
 
@@ -183,6 +182,7 @@ int str_is_number(char* str){
 	int i = 0;
 	while(str[i] != '\0'){
 		if(str[i] < '0' || str[i] > '9'){return 0;}
+		i++;
 	}
 	return 1;
 }

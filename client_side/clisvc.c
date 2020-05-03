@@ -10,7 +10,7 @@ int create_project_cli(char* proj, int srv_sock){
 	if(project_stepin(proj, '+') != 0){return -1;}
 	if(cmd_relay(proj, "create", srv_sock)!=0){return -1;}
 
-	if(recv_files(srv_sock) != NULL){printf("proj Created.\n");}
+	if(recv_proj(srv_sock) != -1){printf("proj Created.\n");}
 	return 0;
 }
 
@@ -56,114 +56,40 @@ int delete_a_file_cli(char* proj_name, char* file_name){
 }
 
 
-/**
- * cmd has to be either c(ommit)or u(pdate)
- */
-int change_prep_cli(int srv_sock, char* proj, char* cmd){
-	if(strcmp(cmd,"commit")!=0 && strcmp(cmd,"update")!=0){return -1;}
-	if(recv_files(srv_sock) != NULL){printf("recv mani.\n");}
-	struct Project* mani_local = indexer_read("./.manifest");
-	struct Project* mani_remote = indexer_read("./.manifest_remote");
-	if(mani_local == NULL || mani_remote == NULL){return -1;}
-
-	char mad_file[10] = "./."; strcat(mad_file, cmd);
-	int mad_fd = open(mad_file, O_WRONLY|O_CREAT, 0666);
-	int conflict_fd = open("./.conflict", O_WRONLY|O_CREAT, 0666);
-	write(mad_fd, cmd, 6); write(mad_fd,"\n", 1);
-	write(conflict_fd,"conflict\n", 9);
-	find_diff(mani_local, mani_remote,mad_fd, conflict_fd);
-	close(mad_fd); close(conflict_fd);
-	free_proj(mani_local);
-	free_proj(mani_remote);
-	if(file_len("./.conflict")<=9){remove("./.conflict");printf("ready to upgrade.\n");}
-	else{printf("Please resolve the conflict first.\n");}//TODO: print out conflict info
-	if(file_len(mad_fd)<=7){remove(mad_fd);printf("Your proj is up to date.\n");}
-	return 0;
-}
-
-
-
-/**
- * 	find the change from remote to local,
- * 	save to update file and conflict file
- *
- * 	need test
- * 	TODO: write to files
- */
-int find_diff(struct Project* local, struct Project* remote,
-		int MAD_file, int C_file){
-	merge_sort(local->files, comp_file_name);
-	merge_sort(remote->files, comp_file_name);
-	struct Node* curr_loco = local->files, *curr_remo = remote->files;
-	while(curr_loco != NULL){
-		while(curr_remo != NULL){
-			int cmp = comp_file_name(curr_loco->data, curr_remo->data);
-			if(cmp < 0){
-				//write to update: D
-				curr_loco = curr_loco->next;
-			}else if(cmp > 0){
-				//write to update A
-				curr_remo = curr_remo->next;
-			}else{
-				//same keep checking
-				//check version&&hash->
-				//		same->check local file hash diff-> M
-				//									same->keep going
-				//		diff->Conflict C
-				curr_loco = curr_loco->next;
-				curr_remo = curr_remo->next;
-			}
-		}
-	}
-	return 0;
-}
-
 
 int commit_cli(char* proj, int srv_sock){
 	if(cmd_relay(proj, "commit", srv_sock)!=0){return -1;}
-	return change_prep_cli(srv_sock, proj, "commit");
+	if(record_change_repo(srv_sock, proj, "commit")!=0){return -1;}
+	if(send_one_file(srv_sock, "./.commit")<= 0){return -1;}
+	return 0;
 }
 
 
 int push_cli(char* proj, int srv_sock){
-	//check if commit exist, conflict not exist
+	if(dir_exist("./.commit") != 0){printf("please commit before push.\n"); return -1;}
+	if(dir_exist("./.conflict") != 0){printf("please resolve conflict first.\n"); return -1;}
 	if(cmd_relay(proj, "push", srv_sock)!=0){return -1;}
-	//send out commit hash
-	//send out files
-
+	char buff[100];
+	strcpy(buff, "hash ");
+	char* md5 = gen_md5("./.commit");
+	strcat(buff, md5);
+	write_cmd(srv_sock, buff);//send out md5 of commit
+	change_mani_with_file_send(srv_sock);//recv commit from srver and send out its required file
 	return 0;
 }
 
 
 int update_cli(char* proj, int srv_sock){
 	if(cmd_relay(proj, "update", srv_sock)!=0){return -1;}
-	return change_prep_cli(srv_sock, proj, "update");
+	return record_change_repo(srv_sock, proj, "update");
 }
 
 
 int upgrade_cli(char* proj, int srv_sock){
 	if(dir_exist("./.update")!=0 || dir_exist("./.conflict")==0)
 	{printf("Please update/resolve conflict first.\n");}
-	if(send_one_file(srv_sock, "./.update")==0){printf("update sent.\n");}
-	struct Project* upgrade_files = recv_files(srv_sock);
-	//update local .manifest
-
-	return 0;
+	return change_mani_with_file_recv(srv_sock, "./.manifest", "./.update");
 }
-
-
-int write_file_node(int fd, struct Node* file, char action){
-	if(action == ' '){
-
-	}else if(action == 'M' || action == 'A' || action == 'D' || action == 'C'){
-
-	}
-	return 0;
-}
-
-
-
-
 
 
 

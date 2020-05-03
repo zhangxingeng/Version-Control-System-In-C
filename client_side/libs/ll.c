@@ -44,6 +44,31 @@ struct Node* append(struct Node* head, union Data data){
   return head;
 }
 
+/**
+ * take a node out from a ll
+ * return NULL unless head is changed
+ */
+struct Node* node_extract(struct Node* node, struct Node* head){
+	struct Node* res = head;
+	if(head == node){res = node->next;}
+	struct Node* nxt = node->next;node->next = NULL;
+	struct Node* prv = node->prev; node->prev = NULL;
+	nxt->prev = prv; prv->next = nxt;
+	return res;
+}
+
+struct Node* add_before(struct Node* node, struct Node* before, struct Node* head){
+	struct Node* res = head, *prev = node->prev;
+	if(prev != NULL){
+		prev->next = before; before->prev = prev;
+		node->prev = before; before->next = node;
+	}
+	else{
+		res = before;
+		before->prev = node; node->next = before;
+	}
+	return res;
+}
 
 struct Node* delete_head(struct Node* head, void (*free_data)()){
   if(head == NULL){return head;}
@@ -79,6 +104,8 @@ struct Node* delete_node(struct Node* head, struct Node* to_delete, void (*free_
 	free_node(to_delete, free_data);
 	return head;
 }
+
+
 
 /**
  * traverse a linked list and apply fun to all node

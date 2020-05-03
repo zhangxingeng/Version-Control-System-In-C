@@ -1,0 +1,21 @@
+Scarcity: make decisions in a world of scarcity
+trade off-constrained optimization
+
+Two type of actors: consumers and producers--and build models
+consumers maximize their utility
+produceres: maximize profit->subject to demand & produce cost
+
+three fundimental questions:
+what good and services should be produced, how to, and who gets it
+all solved by prices.
+
+theoretical vs Empirical Economics:
+theo: build the model
+emp: test the model
+
+positive vs Normative economics:
+pos: they way economics are 
+norm: how they should be
+
+as if theory: when we make a decision, we may not think about models, but we behave as if we use the model.
+

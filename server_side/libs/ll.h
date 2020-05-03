@@ -27,6 +27,9 @@ struct Node* prepend(struct Node* head, union Data data);
 struct Node* append(struct Node* head, union Data data);
 void free_node(struct Node* ptr, void (*free_data)());
 
+struct Node* node_extract(struct Node* node, struct Node* head);
+struct Node* add_before(struct Node* node, struct Node* before, struct Node* head);
+
 struct Node* delete_head(struct Node* head, void (*free_data)());
 struct Node* delete_tail(struct Node* head, void (*free_data)());
 struct Node* delete_node(struct Node* head, struct Node* to_delete, void (*free_data)());

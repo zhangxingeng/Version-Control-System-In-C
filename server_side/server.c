@@ -44,10 +44,10 @@ void* request_handler(void* sockfd_ptr){
 	int sock_fd = *((int*)sockfd_ptr);
 	int buff_size = 1024;
 	char buff[buff_size];
-	if(read_cmd(sock_fd, buff, buff_size) != 0){return NULL;}
+	if(read_cmd(sock_fd, buff, buff_size) != 0){printf("failed to read a command from client.\n");return NULL;}
 	char* cmd = strtok(buff, " ");
 	char* proj_name = strtok(NULL, "\0");
-	if(strlen(cmd) <=0 || strlen(proj_name) <= 0){return NULL;}
+	if(strlen(cmd) <=0 || strlen(proj_name) <= 0){printf("Dont have vaild cmd\n");return NULL;}
 	cmd_to_svc(sock_fd, cmd, proj_name);
 	return NULL;
 }
@@ -67,7 +67,7 @@ void interrupt_Handler(){
 
 int main(){
 	//signal(SIGINT, interrupt_Handler);
-	int sock_fd = conn_estab('b', "localhost", 10035);
+	int sock_fd = conn_estab('B', "localhost", 12196);
 
 	if ((listen(sock_fd, 5)) != 0) {printf("Listen failed...\n");exit(0);}else{printf("listening.\n");}
 	while(1){
